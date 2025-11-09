@@ -1,9 +1,13 @@
 import dotenv from "dotenv";
 import express from "express";
 import connect from "./config/configdb.js";
-import viewEngine from "./config/viewEngine.js";
+// serve API/health endpoints only
+import cors from "cors";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import mongoose from "mongoose";
 import errorHandler from "./middlewares/errorHandler.js";
-import initWebRoutes from "./route/web.js";
+import initApiRoutes from "./routes/api/index.js";
 
 dotenv.config();
 
@@ -13,10 +17,28 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// view engine, routes and db
-viewEngine(app);
-initWebRoutes(app);
+// security middlewares
+app.use(helmet());
+app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173", credentials: true }));
+app.set("trust proxy", 1);
+app.use(rateLimit({ windowMs: 1 * 60 * 1000, max: 100 }));
+
+// connect to DB
 connect();
+
+// simple health/landing route: show DB connection status
+app.get("/", (req, res) => {
+  const state = mongoose.connection.readyState; // 0 = disconnected, 1 = connected
+  const ok = state === 1;
+  const html = `<!doctype html><html><head><title>API</title></head><body><h1>${
+    ok ? "Connected to DB" : "Not connected"
+  }</h1><p>DB state: ${state}</p></body></html>`;
+  if (ok) return res.status(200).send(html);
+  return res.status(503).send(html);
+});
+
+// mount API routes
+initApiRoutes(app);
 
 const port = process.env.PORT || 8080;
 app.listen(port, () => {
