@@ -1,0 +1,24 @@
+<body>
+  <table style="width: 100%">
+    <tr>
+      <th>Email</th>
+      <th>First Name</th>
+      <th>Last Name</th>
+      <th>Address</th>
+      <th>Action</th>
+    </tr>
+    <% for(let i=0; i<datalist.length; i++) { %>
+    <tr>
+        <td><%= datalist[i].email %></td>
+        <td><%= datalist[i].firstName %></td>
+        <td><%= datalist[i].lastName %></td>
+        <td><%= datalist[i].address %></td>
+        <td>
+          <a href="/edit-user?id=<%= datalist[i].id %>">Edit</a>
+          |
+          <a href="/delete-user?id=<%= datalist[i].id %>" onclick="return confirm('Are you sure to delete this user?');">Delete</a>
+        </td>
+    </tr>
+    <% } %>
+  </table>
+</body>
