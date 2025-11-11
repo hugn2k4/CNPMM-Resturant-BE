@@ -1,4 +1,8 @@
 import dotenv from "dotenv";
+dotenv.config();
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import express from "express";
 import connect from "./config/configdb.js";
 // serve API/health endpoints only
@@ -9,11 +13,25 @@ import helmet from "helmet";
 import mongoose from "mongoose";
 import errorHandler from "./middlewares/errorHandler.js";
 import initApiRoutes from "./routes/api/index.js";
-
-dotenv.config();
-
 const app = express();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Kiểm tra file .env có tồn tại không
+const envPath = path.resolve(__dirname, '../.env');
+console.log('Đường dẫn file .env:', envPath);
+console.log('File .env tồn tại:', fs.existsSync(envPath));
+
+// Load env file
+dotenv.config({ path: envPath });
+
+console.log('=== KIỂM TRA BIẾN MÔI TRƯỜNG ===');
+console.log('SMTP_HOST:', process.env.SMTP_HOST || 'CHƯA ĐƯỢC SET');
+console.log('SMTP_USER:', process.env.SMTP_USER || 'CHƯA ĐƯỢC SET');
+console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'ĐÃ SET' : 'CHƯA SET');
+console.log('PORT:', process.env.PORT || '8080 (mặc định)');
+console.log('=== KẾT THÚC KIỂM TRA ===');
 // built-in body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
