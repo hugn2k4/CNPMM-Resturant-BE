@@ -2,6 +2,7 @@ import dotenv from "dotenv";
 import express from "express";
 import connect from "./config/configdb.js";
 // serve API/health endpoints only
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 import helmet from "helmet";
@@ -19,9 +20,21 @@ app.use(express.urlencoded({ extended: true }));
 
 // security middlewares
 app.use(helmet());
-app.use(cors({ origin: process.env.CORS_ORIGIN || "http://localhost:5173", credentials: true }));
+// In development allow the React dev server origin or echo origin for convenience
+const corsOptions =
+  process.env.NODE_ENV === "development"
+    ? { origin: true, methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], credentials: true }
+    : {
+        origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+        methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        credentials: true,
+      };
+app.use(cors(corsOptions));
+// No explicit app.options needed — `app.use(cors(corsOptions))` above handles CORS and preflight.
+// Remove the explicit options route which caused path-to-regexp errors on some setups.
 app.set("trust proxy", 1);
 app.use(rateLimit({ windowMs: 1 * 60 * 1000, max: 100 }));
+app.use(cookieParser());
 
 // connect to DB
 connect();

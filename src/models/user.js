@@ -6,16 +6,14 @@ const userSchema = new mongoose.Schema(
   {
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    firstName: { type: String },
-    lastName: { type: String },
-    address: { type: String },
-    phoneNumber: { type: String },
-    gender: { type: Boolean, default: false },
-    image: { type: String },
-    roleId: { type: String },
-    positionId: { type: String },
+    fullName: { type: String, required: true },
+    phoneNumber: { type: String, unique: true, sparse: true },
+    dateOfBirth: { type: Date },
+    gender: { type: String, enum: ["MALE", "FEMALE", "OTHER"] },
+    role: { type: String },
+    status: { type: String, enum: ["ACTIVE", "INACTIVE", "SUSPENDED"], default: "ACTIVE" },
   },
-  { timestamps: true }
+  { timestamps: true, discriminatorKey: "role" }
 );
 
 export default mongoose.models.User || mongoose.model("User", userSchema);
