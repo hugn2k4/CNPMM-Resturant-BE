@@ -1,11 +1,18 @@
-import express from "express";
-import authRoutes from "./auth.js";
+// src/routes/api/index.js
+import { Router } from "express";
+import authRoute from "./auth.route.js";   // NHỚ có .js
 
-const router = express.Router();
+export default function initApiRoutes(app) {
+  const router = Router();
 
-const initApiRoutes = (app) => {
-  router.use("/auth", authRoutes);
+  // test nhanh
+  router.get("/ping", (_req, res) => res.send("api ok"));
+
+  // nhóm auth -> /api/auth/*
+  router.use("/auth", authRoute);
+
+  // mount dưới /api
   app.use("/api", router);
-};
 
-export default initApiRoutes;
+  console.log("[routes] mounted: /api, /api/ping, /api/auth/*");
+}
