@@ -13,6 +13,8 @@ import helmet from "helmet";
 import mongoose from "mongoose";
 import errorHandler from "./middlewares/errorHandler.js";
 import initApiRoutes from "./routes/api/index.js";
+import cookieParser from "cookie-parser";
+
 const app = express();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,6 +37,7 @@ console.log('=== KẾT THÚC KIỂM TRA ===');
 // built-in body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // security middlewares
 app.use(helmet());
@@ -78,3 +81,13 @@ app.listen(port, () => {
 
 // error handler (last middleware)
 app.use(errorHandler);
+
+function printRoutes() {
+  const st = app._router?.stack || [];
+  console.log("[boot] routes:");
+  st.filter(l => l.route).forEach(l =>
+    console.log(" -", Object.keys(l.route.methods).join(","), l.route.path)
+  );
+}
+printRoutes();
+
