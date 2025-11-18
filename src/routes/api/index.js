@@ -1,6 +1,9 @@
 // src/routes/api/index.js
 import { Router } from "express";
-import authRoute from "./auth.route.js";   // NHỚ có .js
+import authRoute from "./auth.route.js";
+import productRoute from "./product.route.js";
+import categoryRoute from "./category.route.js";
+import reviewRoute from "./review.route.js";
 
 export default function initApiRoutes(app) {
   const router = Router();
@@ -10,9 +13,18 @@ export default function initApiRoutes(app) {
 
   // nhóm auth -> /api/auth/*
   router.use("/auth", authRoute);
+  
+  // nhóm products -> /api/products/*
+  router.use("/products", productRoute);
+  
+  // nhóm categories -> /api/categories/*
+  router.use("/categories", categoryRoute);
+  
+  // nhóm reviews -> /api/reviews/*
+  router.use("/reviews", reviewRoute);
 
   // mount dưới /api
   app.use("/api", router);
 
-  console.log("[routes] mounted: /api, /api/ping, /api/auth/*");
+  console.log("[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*");
 }
