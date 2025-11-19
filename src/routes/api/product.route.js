@@ -5,6 +5,23 @@ import productController from "../../controller/product.controller.js";
 
 const router = express.Router();
 
+// ===== API TRANG CHỦ =====
+// GET /api/products/home - Lấy tất cả dữ liệu cho trang chủ
+router.get("/home", productController.getHomePageData);
+
+// GET /api/products/newest - Lấy sản phẩm mới nhất
+router.get("/newest", productController.getNewestProducts);
+
+// GET /api/products/best-selling - Lấy sản phẩm bán chạy nhất
+router.get("/best-selling", productController.getBestSellingProducts);
+
+// GET /api/products/most-viewed - Lấy sản phẩm được xem nhiều nhất
+router.get("/most-viewed", productController.getMostViewedProducts);
+
+// GET /api/products/top-discount - Lấy sản phẩm khuyến mãi cao nhất
+router.get("/top-discount", productController.getTopDiscountProducts);
+
+// ===== API CŨ =====
 // GET /api/products/featured - Lấy sản phẩm nổi bật
 router.get("/featured", productController.getFeaturedProducts);
 
