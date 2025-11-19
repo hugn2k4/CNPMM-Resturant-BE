@@ -27,9 +27,11 @@ export function jwtGuard(req, res, next) {
 
 // Middleware để verify và lấy thông tin user đầy đủ
 export async function authenticateUser(req, res, next) {
+  console.log(`🔐 Auth check for: ${req.method} ${req.path}`);
   const raw = req.cookies?.access_token || req.headers.authorization?.split(" ")[1];
 
   if (!raw) {
+    console.log("❌ No token provided");
     return res.status(401).json({
       success: false,
       message: "Unauthorized - No token provided",

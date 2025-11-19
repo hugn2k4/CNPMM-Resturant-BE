@@ -102,18 +102,23 @@ export const googleIdTokenLogin = async (req, res) => {
     const user = await authService.upsertGoogleUser(profile);
 
     // Tạo JWT token
-    const token = authService.signAccessToken(user, process.env.JWT_SECRET);
+    const accessToken = authService.signAccessToken(user, process.env.JWT_SECRET);
 
-    // Trả về token cho frontend
+    // Trả về token cho frontend với format giống local login
     return res.json({
       success: true,
       data: {
-        token,
+        accessToken,
         user: {
           id: user.id,
           email: user.email,
-          name: user.name,
-          picture: user.picture,
+          fullName: user.fullName,
+          phoneNumber: user.phoneNumber,
+          dateOfBirth: user.dateOfBirth,
+          gender: user.gender,
+          role: user.role,
+          image: user.image,
+          avatar: user.avatar,
         },
       },
     });

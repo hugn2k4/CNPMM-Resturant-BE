@@ -234,7 +234,11 @@ export async function login(loginRequest) {
     email: user.email,
     fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim(),
     phoneNumber: user.phoneNumber || "",
+    dateOfBirth: user.dateOfBirth,
+    gender: user.gender,
     role: user.role || "USER",
+    image: user.image,
+    avatar: user.image,
   };
 
   return {
@@ -455,8 +459,13 @@ export async function upsertGoogleUser(googleProfile) {
   return {
     id: user._id.toString(),
     email: user.email,
-    name: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email,
-    picture: user.image,
+    fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || user.email,
+    phoneNumber: user.phoneNumber || "",
+    dateOfBirth: user.dateOfBirth,
+    gender: user.gender,
+    role: user.role || "USER",
+    image: user.image,
+    avatar: user.image,
     firstName: user.firstName,
     lastName: user.lastName,
   };
