@@ -1,10 +1,10 @@
 import dotenv from "dotenv";
-dotenv.config();
+import express from "express";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import express from "express";
 import connect from "./config/configdb.js";
+dotenv.config();
 // serve API/health endpoints only
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -20,27 +20,27 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Kiểm tra file .env có tồn tại không
-const envPath = path.resolve(__dirname, '../.env');
-console.log('Đường dẫn file .env:', envPath);
-console.log('File .env tồn tại:', fs.existsSync(envPath));
+const envPath = path.resolve(__dirname, "../.env");
+console.log("Đường dẫn file .env:", envPath);
+console.log("File .env tồn tại:", fs.existsSync(envPath));
 
 // Load env file
 dotenv.config({ path: envPath });
 
-console.log('=== KIỂM TRA BIẾN MÔI TRƯỜNG ===');
-console.log('SMTP_HOST:', process.env.SMTP_HOST || 'CHƯA ĐƯỢC SET');
-console.log('SMTP_USER:', process.env.SMTP_USER || 'CHƯA ĐƯỢC SET');
-console.log('JWT_SECRET:', process.env.JWT_SECRET ? 'ĐÃ SET' : 'CHƯA SET');
-console.log('PORT:', process.env.PORT || '8080 (mặc định)');
-console.log('=== KẾT THÚC KIỂM TRA ===');
+console.log("=== KIỂM TRA BIẾN MÔI TRƯỜNG ===");
+console.log("SMTP_HOST:", process.env.SMTP_HOST || "CHƯA ĐƯỢC SET");
+console.log("SMTP_USER:", process.env.SMTP_USER || "CHƯA ĐƯỢC SET");
+console.log("JWT_SECRET:", process.env.JWT_SECRET ? "ĐÃ SET" : "CHƯA SET");
+console.log("PORT:", process.env.PORT || "8080 (mặc định)");
+console.log("=== KẾT THÚC KIỂM TRA ===");
 // built-in body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Serve static files từ folder public
-app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
-console.log('✓ Static files served from:', path.join(__dirname, '../public/uploads'));
+app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
+console.log("✓ Static files served from:", path.join(__dirname, "../public/uploads"));
 
 // security middlewares
 app.use(helmet());
@@ -59,6 +59,12 @@ app.use(cors(corsOptions));
 app.set("trust proxy", 1);
 app.use(rateLimit({ windowMs: 1 * 60 * 1000, max: 100 }));
 app.use(cookieParser());
+
+// Log all incoming requests
+app.use((req, res, next) => {
+  console.log(`📥 ${req.method} ${req.url} from ${req.ip}`);
+  next();
+});
 
 // connect to DB
 connect();
@@ -88,9 +94,6 @@ app.use(errorHandler);
 function printRoutes() {
   const st = app._router?.stack || [];
   console.log("[boot] routes:");
-  st.filter(l => l.route).forEach(l =>
-    console.log(" -", Object.keys(l.route.methods).join(","), l.route.path)
-  );
+  st.filter((l) => l.route).forEach((l) => console.log(" -", Object.keys(l.route.methods).join(","), l.route.path));
 }
 printRoutes();
-
