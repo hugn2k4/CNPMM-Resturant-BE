@@ -40,7 +40,7 @@ const productSchema = new mongoose.Schema({
     min: 0
   },
   preparationTime: {
-    type: String // VD: "15-20 phút"
+    type: String
   },
   calories: {
     type: Number,
@@ -55,6 +55,27 @@ const productSchema = new mongoose.Schema({
   reviewCount: {
     type: Number,
     default: 0,
+    min: 0
+  },
+  // Thêm các trường mới
+  viewCount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  soldCount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  discount: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 100 // Phần trăm giảm giá
+  },
+  discountPrice: {
+    type: Number,
     min: 0
   },
   isDeleted: {
@@ -76,12 +97,33 @@ productSchema.virtual('category', {
   justOne: true
 });
 
+// Virtual để tính giá sau giảm
+productSchema.virtual('finalPrice').get(function() {
+  if (this.discount > 0) {
+    return this.price * (1 - this.discount / 100);
+  }
+  return this.price;
+});
+
 // Index để tìm kiếm nhanh
 productSchema.index({ name: 'text', description: 'text' });
 productSchema.index({ categoryId: 1 });
 productSchema.index({ status: 1 });
 productSchema.index({ rating: -1 });
 productSchema.index({ createdAt: -1 });
+productSchema.index({ viewCount: -1 });
+productSchema.index({ soldCount: -1 });
+productSchema.index({ discount: -1 });
+
+// Middleware để tự động tính discountPrice
+productSchema.pre('save', function(next) {
+  if (this.discount > 0) {
+    this.discountPrice = this.price * (1 - this.discount / 100);
+  } else {
+    this.discountPrice = this.price;
+  }
+  next();
+});
 
 // Đảm bảo virtual fields được serialize
 productSchema.set('toJSON', { virtuals: true });

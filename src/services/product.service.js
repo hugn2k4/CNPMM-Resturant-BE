@@ -10,17 +10,14 @@ class ProductService {
     try {
       const query = { isDeleted: false };
 
-      // Filter by category
       if (categoryId) {
         query.categoryId = categoryId;
       }
 
-      // Filter by status
       if (status) {
         query.status = status;
       }
 
-      // Search by name or description
       if (search) {
         query.$text = { $search: search };
       }
@@ -73,6 +70,9 @@ class ProductService {
         throw new Error('Product not found');
       }
 
+      // Tăng viewCount
+      await Product.findByIdAndUpdate(productId, { $inc: { viewCount: 1 } });
+
       return product;
     } catch (error) {
       throw new Error(`Error fetching product: ${error.message}`);
@@ -82,7 +82,6 @@ class ProductService {
   // Tạo sản phẩm mới
   async createProduct(productData) {
     try {
-      // Verify category exists
       const category = await Category.findById(productData.categoryId);
       if (!category) {
         throw new Error('Category not found');
@@ -100,7 +99,6 @@ class ProductService {
   // Cập nhật sản phẩm
   async updateProduct(productId, updateData) {
     try {
-      // Verify category if being updated
       if (updateData.categoryId) {
         const category = await Category.findById(updateData.categoryId);
         if (!category) {
@@ -166,7 +164,6 @@ class ProductService {
 
       product.stock = newStock;
       
-      // Auto update status based on stock
       if (newStock === 0) {
         product.status = 'out_of_stock';
       } else if (product.status === 'out_of_stock') {
@@ -202,6 +199,110 @@ class ProductService {
       return products;
     } catch (error) {
       throw new Error(`Error fetching featured products: ${error.message}`);
+    }
+  }
+
+  // ===== CÁC API MỚI CHO TRANG CHỦ =====
+
+  // Lấy 8 sản phẩm mới nhất
+  async getNewestProducts(limit = 8) {
+    try {
+      const products = await Product.find({ 
+        isDeleted: false, 
+        status: 'available',
+        stock: { $gt: 0 }
+      })
+        .populate('categoryId', 'name slug image')
+        .populate('listProductImage', 'url alt')
+        .sort({ createdAt: -1 })
+        .limit(limit)
+        .lean();
+
+      return products;
+    } catch (error) {
+      throw new Error(`Error fetching newest products: ${error.message}`);
+    }
+  }
+
+  // Lấy 6 sản phẩm bán chạy nhất
+  async getBestSellingProducts(limit = 6) {
+    try {
+      const products = await Product.find({ 
+        isDeleted: false, 
+        status: 'available',
+        stock: { $gt: 0 }
+      })
+        .populate('categoryId', 'name slug image')
+        .populate('listProductImage', 'url alt')
+        .sort({ soldCount: -1, rating: -1 })
+        .limit(limit)
+        .lean();
+
+      return products;
+    } catch (error) {
+      throw new Error(`Error fetching best selling products: ${error.message}`);
+    }
+  }
+
+  // Lấy 8 sản phẩm được xem nhiều nhất
+  async getMostViewedProducts(limit = 8) {
+    try {
+      const products = await Product.find({ 
+        isDeleted: false, 
+        status: 'available',
+        stock: { $gt: 0 }
+      })
+        .populate('categoryId', 'name slug image')
+        .populate('listProductImage', 'url alt')
+        .sort({ viewCount: -1, rating: -1 })
+        .limit(limit)
+        .lean();
+
+      return products;
+    } catch (error) {
+      throw new Error(`Error fetching most viewed products: ${error.message}`);
+    }
+  }
+
+  // Lấy 4 sản phẩm khuyến mãi cao nhất
+  async getTopDiscountProducts(limit = 4) {
+    try {
+      const products = await Product.find({ 
+        isDeleted: false, 
+        status: 'available',
+        stock: { $gt: 0 },
+        discount: { $gt: 0 }
+      })
+        .populate('categoryId', 'name slug image')
+        .populate('listProductImage', 'url alt')
+        .sort({ discount: -1, rating: -1 })
+        .limit(limit)
+        .lean();
+
+      return products;
+    } catch (error) {
+      throw new Error(`Error fetching top discount products: ${error.message}`);
+    }
+  }
+
+  // Lấy tất cả dữ liệu cho trang chủ (gọi 1 lần)
+  async getHomePageData() {
+    try {
+      const [newest, bestSelling, mostViewed, topDiscount] = await Promise.all([
+        this.getNewestProducts(8),
+        this.getBestSellingProducts(6),
+        this.getMostViewedProducts(8),
+        this.getTopDiscountProducts(4)
+      ]);
+
+      return {
+        newest,
+        bestSelling,
+        mostViewed,
+        topDiscount
+      };
+    } catch (error) {
+      throw new Error(`Error fetching home page data: ${error.message}`);
     }
   }
 }
