@@ -13,7 +13,6 @@ import helmet from "helmet";
 import mongoose from "mongoose";
 import errorHandler from "./middlewares/errorHandler.js";
 import initApiRoutes from "./routes/api/index.js";
-import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -38,6 +37,10 @@ console.log('=== KẾT THÚC KIỂM TRA ===');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Serve static files từ folder public
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+console.log('✓ Static files served from:', path.join(__dirname, '../public/uploads'));
 
 // security middlewares
 app.use(helmet());
