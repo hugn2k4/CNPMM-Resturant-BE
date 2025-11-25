@@ -430,6 +430,8 @@ export async function upsertGoogleUser(googleProfile) {
     $or: [{ providerId: sub, authProvider: "google" }, { email: email }],
   });
 
+  const validGenders = ["MALE", "FEMALE", "OTHER", "male", "female", "other"];
+  
   if (user) {
     // Cập nhật thông tin user nếu đã tồn tại
     user.providerId = sub;
@@ -440,6 +442,10 @@ export async function upsertGoogleUser(googleProfile) {
     user.image = picture || user.image;
     user.isEmailVerified = email_verified !== undefined ? email_verified : user.isEmailVerified;
     user.lastLogin = new Date();
+    // Đảm bảo gender là giá trị hợp lệ hoặc undefined, không phải false
+    if (user.gender === false || user.gender === 'false' || (user.gender && !validGenders.includes(user.gender))) {
+      user.gender = undefined;
+    }
     await user.save();
   } else {
     // Tạo user mới
