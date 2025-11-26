@@ -25,7 +25,18 @@ export const updateUserProfile = async (userId, profileData) => {
     if (fullName !== undefined) updateFields.fullName = fullName;
     if (phoneNumber !== undefined) updateFields.phoneNumber = phoneNumber;
     if (dateOfBirth !== undefined) updateFields.dateOfBirth = dateOfBirth;
-    if (gender !== undefined) updateFields.gender = gender;
+    // Chỉ set gender nếu nó là giá trị hợp lệ, không phải false hoặc 'false'
+    if (gender !== undefined) {
+      const validGenders = ["MALE", "FEMALE", "OTHER", "male", "female", "other"];
+      if (gender === false || gender === 'false' || gender === null || gender === '') {
+        updateFields.gender = undefined;
+      } else if (validGenders.includes(gender)) {
+        updateFields.gender = gender;
+      } else {
+        // Nếu giá trị không hợp lệ, không set (giữ nguyên giá trị hiện tại)
+        // Hoặc có thể throw error nếu muốn strict validation
+      }
+    }
     if (image !== undefined) updateFields.image = image;
 
     const updatedUser = await User.findByIdAndUpdate(userId, updateFields, {
