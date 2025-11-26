@@ -1,11 +1,12 @@
 // src/routes/api/index.js
 import { Router } from "express";
 import authRoute from "./auth.route.js";
+import cartRoute from "./cart.route.js";
 import categoryRoute from "./category.route.js";
+import orderRoute from "./order.route.js";
 import productRoute from "./product.route.js";
 import reviewRoute from "./review.route.js";
 import userRoute from "./user.route.js";
-import cartRoute from "./cart.route.js";
 
 export default function initApiRoutes(app) {
   const router = Router();
@@ -31,10 +32,13 @@ export default function initApiRoutes(app) {
   // nhóm cart -> /api/cart/*
   router.use("/cart", cartRoute);
 
+  // nhóm orders -> /api/orders/*
+  router.use("/orders", orderRoute);
+
   // mount dưới /api
   app.use("/api", router);
 
   console.log(
-    "[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*, /api/users/*, /api/cart/*"
+    "[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*, /api/users/*, /api/cart/*, /api/orders/*"
   );
 }
