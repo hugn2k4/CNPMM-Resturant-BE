@@ -4,7 +4,7 @@ import * as userService from "../services/user.service.js";
 // GET /api/users/profile - Get current user profile
 export const getProfile = async (req, res) => {
   try {
-    const userId = req.user._id || req.user.uid;
+    const userId = req.user.id;
     const user = await userService.getUserById(userId);
 
     if (!user) {
@@ -40,7 +40,7 @@ export const getProfile = async (req, res) => {
 // PUT /api/users/profile - Update current user profile
 export const updateProfile = async (req, res) => {
   try {
-    const userId = req.user._id || req.user.uid;
+    const userId = req.user.id;
     const { fullName, phoneNumber, dateOfBirth, gender, image } = req.body;
 
     const updatedUser = await userService.updateUserProfile(userId, {
