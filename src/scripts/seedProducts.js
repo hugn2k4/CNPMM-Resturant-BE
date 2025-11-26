@@ -1,13 +1,13 @@
 "use strict";
 
 import mongoose from "mongoose";
-import Product from "../models/product.js";
 import Category from "../models/category.js";
 import Image from "../models/image.js";
+import Product from "../models/product.js";
 
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/node_fulltask");
+    await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/siupo");
     console.log("✅ MongoDB connected");
   } catch (error) {
     console.error("❌ MongoDB connection error:", error);
@@ -56,7 +56,7 @@ const seedData = async () => {
 
     // Dữ liệu sản phẩm thực tế
     console.log("🍔 Đang tạo products...");
-    
+
     const productsData = [
       // MÓN CHÍNH - Best sellers
       {
@@ -1072,14 +1072,13 @@ const seedData = async () => {
     ];
 
     await Product.insertMany(productsData);
-    
+
     console.log(`✅ Đã tạo ${productsData.length} products`);
     console.log("\n📊 THỐNG KÊ:");
-    console.log(`   - Có khuyến mãi: ${productsData.filter(p => p.discount > 0).length}`);
-    console.log(`   - Hết hàng: ${productsData.filter(p => p.stock === 0).length}`);
-    console.log(`   - Best sellers (sold > 1000): ${productsData.filter(p => p.soldCount > 1000).length}`);
-    console.log(`   - Highest rated (4.8+): ${productsData.filter(p => p.rating >= 4.8).length}`);
-
+    console.log(`   - Có khuyến mãi: ${productsData.filter((p) => p.discount > 0).length}`);
+    console.log(`   - Hết hàng: ${productsData.filter((p) => p.stock === 0).length}`);
+    console.log(`   - Best sellers (sold > 1000): ${productsData.filter((p) => p.soldCount > 1000).length}`);
+    console.log(`   - Highest rated (4.8+): ${productsData.filter((p) => p.rating >= 4.8).length}`);
   } catch (error) {
     console.error("❌ Lỗi:", error);
   }
