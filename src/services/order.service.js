@@ -3,12 +3,16 @@
 import Cart from "../models/cart.js";
 import Order from "../models/order.js";
 import Product from "../models/product.js";
+import UserVoucher from "../models/userVoucher.js";
+import Voucher from "../models/voucher.js";
+import loyaltyService from "./loyalty.service.js";
 
 class OrderService {
   // Tạo đơn hàng mới
   async createOrder(userId, orderData) {
     try {
-      const { items, shippingAddress, paymentMethod, totalAmount, shippingFee, note } = orderData;
+      const { items, shippingAddress, paymentMethod, totalAmount, shippingFee, note, voucherCode, pointsToUse } =
+        orderData;
 
       // Validate items
       if (!items || items.length === 0) {
@@ -58,8 +62,58 @@ class OrderService {
         .padStart(3, "0");
       const orderNumber = `ORD${timestamp}${random}`;
 
+      // Khởi tạo giá trị discount
+      let voucherDiscount = 0;
+      let voucherId = null;
+      let pointsDiscount = 0;
+      let pointsUsed = 0;
+
+      // Áp dụng voucher nếu có
+      if (voucherCode) {
+        const voucher = await Voucher.findOne({ code: voucherCode.toUpperCase() });
+
+        if (voucher && voucher.isValid) {
+          // Kiểm tra usage của user
+          let userVoucher = await UserVoucher.findOne({ user: userId, voucher: voucher._id });
+          const userUsageCount = userVoucher ? userVoucher.usageCount : 0;
+
+          const validation = voucher.isValidForOrder(calculatedTotal, userId, userUsageCount);
+
+          if (validation.valid) {
+            voucherDiscount = voucher.calculateDiscount(calculatedTotal);
+            voucherId = voucher._id;
+
+            // Increment usage count
+            voucher.usageCount += 1;
+            await voucher.save();
+
+            // Update user voucher
+            if (!userVoucher) {
+              userVoucher = new UserVoucher({ user: userId, voucher: voucher._id });
+            }
+            await userVoucher.incrementUsage();
+          }
+        }
+      }
+
+      // Áp dụng điểm tích lũy nếu có
+      if (pointsToUse && pointsToUse > 0) {
+        try {
+          const loyaltyAccount = await loyaltyService.getOrCreateLoyaltyAccount(userId);
+
+          if (loyaltyAccount.availablePoints >= pointsToUse) {
+            pointsUsed = pointsToUse;
+            pointsDiscount = pointsToUse * loyaltyService.constructor.CURRENCY_PER_POINT;
+          }
+        } catch (error) {
+          console.log("Error applying loyalty points:", error.message);
+        }
+      }
+
       // Tính finalAmount
-      const finalAmount = calculatedTotal + (shippingFee || 0);
+      const subtotal = calculatedTotal + (shippingFee || 0);
+      const totalDiscount = voucherDiscount + pointsDiscount;
+      const finalAmount = Math.max(0, subtotal - totalDiscount);
 
       // Tạo đơn hàng
       const order = new Order({
@@ -70,11 +124,36 @@ class OrderService {
         paymentMethod: paymentMethod || "COD",
         totalAmount: calculatedTotal,
         shippingFee: shippingFee || 0,
+        voucherDiscount,
+        voucherCode: voucherCode ? voucherCode.toUpperCase() : null,
+        voucherId,
+        pointsDiscount,
+        pointsUsed,
         finalAmount,
         note,
       });
 
       await order.save();
+
+      // Deduct loyalty points nếu đã sử dụng
+      if (pointsUsed > 0) {
+        try {
+          await loyaltyService.applyPointsToOrder(userId, pointsUsed, order._id);
+        } catch (error) {
+          console.log("Error deducting loyalty points:", error.message);
+        }
+      }
+
+      // Tính điểm tích lũy từ đơn hàng (sau khi trừ discount)
+      if (finalAmount > 0) {
+        try {
+          const earnedPointsResult = await loyaltyService.earnPointsFromOrder(userId, finalAmount, order._id);
+          order.pointsEarned = earnedPointsResult.earnedPoints;
+          await order.save();
+        } catch (error) {
+          console.log("Error earning loyalty points:", error.message);
+        }
+      }
 
       // Xóa giỏ hàng sau khi đặt hàng thành công
       await Cart.findOneAndUpdate({ userId }, { items: [] });

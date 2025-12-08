@@ -35,6 +35,7 @@
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
     "seed": "node src/scripts/seedProducts.js",
+    "seed:vouchers": "node src/scripts/seedVouchers.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "type": "module",
