@@ -3,6 +3,8 @@
 import Product from "../models/product.js";
 import Category from "../models/category.js";
 import Image from "../models/image.js";
+import Order from "../models/order.js";
+import Review from "../models/review.js";
 
 class ProductService {
   // Lấy tất cả sản phẩm với filter và pagination
@@ -69,6 +71,20 @@ class ProductService {
       if (!product) {
         throw new Error('Product not found');
       }
+
+      // Count total buyers (unique users who bought this product)
+      const buyers = await Order.distinct('userId', {
+        'items.productId': productId,
+        orderStatus: { $in: ['confirmed', 'preparing', 'shipping', 'delivered'] }
+      });
+      const totalBuyers = buyers.length;
+
+      // Count total comments/reviews
+      const totalComments = await Review.countDocuments({ productId });
+
+      // Add counts to product
+      product.total_buyers = totalBuyers;
+      product.total_comments = totalComments;
 
       // Tăng viewCount
       await Product.findByIdAndUpdate(productId, { $inc: { viewCount: 1 } });
@@ -303,6 +319,97 @@ class ProductService {
       };
     } catch (error) {
       throw new Error(`Error fetching home page data: ${error.message}`);
+    }
+  }
+
+  // Get similar products
+  // Similar products are those with:
+  // - Same category OR
+  // - Same tags (if tags field exists in future) OR
+  // - Similar name/description (text search)
+  async getSimilarProducts(productId, limit = 8) {
+    try {
+      // Get the current product
+      const currentProduct = await Product.findById(productId)
+        .select('categoryId name description')
+        .lean();
+
+      if (!currentProduct) {
+        throw new Error('Product not found');
+      }
+
+      // Build query for similar products
+      const query = {
+        _id: { $ne: productId }, // Exclude current product
+        isDeleted: false,
+        status: 'available',
+        stock: { $gt: 0 }
+      };
+
+      // Find products with same category
+      if (currentProduct.categoryId) {
+        query.categoryId = currentProduct.categoryId;
+      }
+
+      // Get products with same category first
+      let similarProducts = await Product.find(query)
+        .populate('categoryId', 'name slug image')
+        .populate('listProductImage', 'url alt')
+        .sort({ rating: -1, soldCount: -1 })
+        .limit(limit)
+        .lean();
+
+      // If we don't have enough products, add more based on text search
+      if (similarProducts.length < limit && currentProduct.name) {
+        const textQuery = {
+          _id: { $ne: productId },
+          isDeleted: false,
+          status: 'available',
+          stock: { $gt: 0 },
+          categoryId: { $ne: currentProduct.categoryId } // Exclude already found products
+        };
+
+        // Extract keywords from product name
+        const keywords = currentProduct.name.split(' ').filter(w => w.length > 2);
+        if (keywords.length > 0) {
+          textQuery.$or = [
+            { name: { $regex: keywords[0], $options: 'i' } },
+            { description: { $regex: keywords[0], $options: 'i' } }
+          ];
+        }
+
+        const additionalProducts = await Product.find(textQuery)
+          .populate('categoryId', 'name slug image')
+          .populate('listProductImage', 'url alt')
+          .sort({ rating: -1, viewCount: -1 })
+          .limit(limit - similarProducts.length)
+          .lean();
+
+        similarProducts = [...similarProducts, ...additionalProducts];
+      }
+
+      // If still not enough, get any available products
+      if (similarProducts.length < limit) {
+        const remainingQuery = {
+          _id: { $nin: [productId, ...similarProducts.map(p => p._id)] },
+          isDeleted: false,
+          status: 'available',
+          stock: { $gt: 0 }
+        };
+
+        const remainingProducts = await Product.find(remainingQuery)
+          .populate('categoryId', 'name slug image')
+          .populate('listProductImage', 'url alt')
+          .sort({ rating: -1, viewCount: -1 })
+          .limit(limit - similarProducts.length)
+          .lean();
+
+        similarProducts = [...similarProducts, ...remainingProducts];
+      }
+
+      return similarProducts.slice(0, limit);
+    } catch (error) {
+      throw new Error(`Error fetching similar products: ${error.message}`);
     }
   }
 }

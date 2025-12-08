@@ -168,6 +168,19 @@ class ProductController {
       data
     });
   });
+
+  // Lấy sản phẩm tương tự
+  getSimilarProducts = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { limit } = req.query;
+    const products = await productService.getSimilarProducts(id, parseInt(limit) || 8);
+    
+    res.status(200).json({
+      success: true,
+      message: 'Similar products fetched successfully',
+      data: products
+    });
+  });
 }
 
 export default new ProductController();

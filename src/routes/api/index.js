@@ -9,6 +9,7 @@ import productRoute from "./product.route.js";
 import reviewRoute from "./review.route.js";
 import userRoute from "./user.route.js";
 import voucherRoute from "./voucher.route.js";
+import wishlistRoute from "./wishlist.route.js";
 
 export default function initApiRoutes(app) {
   const router = Router();
@@ -34,6 +35,9 @@ export default function initApiRoutes(app) {
   // nhóm cart -> /api/cart/*
   router.use("/cart", cartRoute);
 
+  // nhóm wishlist -> /api/wishlist/*
+  router.use("/wishlist", wishlistRoute);
+
   // nhóm orders -> /api/orders/*
   router.use("/orders", orderRoute);
 
@@ -47,6 +51,6 @@ export default function initApiRoutes(app) {
   app.use("/api", router);
 
   console.log(
-    "[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*, /api/users/*, /api/cart/*, /api/orders/*, /api/vouchers/*, /api/loyalty/*"
+    "[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*, /api/users/*, /api/cart/*, /api/wishlist/*, /api/orders/*, /api/vouchers/*, /api/loyalty/*"
   );
 }

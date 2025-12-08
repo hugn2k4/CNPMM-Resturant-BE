@@ -2,6 +2,7 @@
 
 import express from "express";
 import productController from "../../controller/product.controller.js";
+import productViewController from "../../controller/productView.controller.js";
 
 const router = express.Router();
 
@@ -27,6 +28,15 @@ router.get("/featured", productController.getFeaturedProducts);
 
 // GET /api/products/category/:categoryId - Lấy sản phẩm theo danh mục
 router.get("/category/:categoryId", productController.getProductsByCategory);
+
+// GET /api/products/recent - Get recently viewed products (must come before /:id)
+router.get("/recent", productViewController.getRecentViews);
+
+// POST /api/products/:id/view - Log product view
+router.post("/:id/view", productViewController.logProductView);
+
+// GET /api/products/:id/similar - Lấy sản phẩm tương tự
+router.get("/:id/similar", productController.getSimilarProducts);
 
 // GET /api/products/:id - Lấy chi tiết sản phẩm
 router.get("/:id", productController.getProductById);
