@@ -102,6 +102,35 @@ const orderSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    voucherDiscount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    voucherCode: {
+      type: String,
+      trim: true,
+      uppercase: true,
+    },
+    voucherId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Voucher",
+    },
+    pointsDiscount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    pointsUsed: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    pointsEarned: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     finalAmount: {
       type: Number,
       min: 0,
@@ -142,8 +171,10 @@ orderSchema.pre("save", function (next) {
       this.orderNumber = `ORD${timestamp}${random}`;
     }
 
-    // Tính finalAmount
-    this.finalAmount = this.totalAmount + (this.shippingFee || 0);
+    // Tính finalAmount với voucher và points discount
+    const subtotal = this.totalAmount + (this.shippingFee || 0);
+    const totalDiscount = (this.voucherDiscount || 0) + (this.pointsDiscount || 0);
+    this.finalAmount = Math.max(0, subtotal - totalDiscount);
   }
   next();
 });

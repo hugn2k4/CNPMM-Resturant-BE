@@ -3,10 +3,12 @@ import { Router } from "express";
 import authRoute from "./auth.route.js";
 import cartRoute from "./cart.route.js";
 import categoryRoute from "./category.route.js";
+import loyaltyRoute from "./loyalty.route.js";
 import orderRoute from "./order.route.js";
 import productRoute from "./product.route.js";
 import reviewRoute from "./review.route.js";
 import userRoute from "./user.route.js";
+import voucherRoute from "./voucher.route.js";
 
 export default function initApiRoutes(app) {
   const router = Router();
@@ -35,10 +37,16 @@ export default function initApiRoutes(app) {
   // nhóm orders -> /api/orders/*
   router.use("/orders", orderRoute);
 
+  // nhóm vouchers -> /api/vouchers/*
+  router.use("/vouchers", voucherRoute);
+
+  // nhóm loyalty -> /api/loyalty/*
+  router.use("/loyalty", loyaltyRoute);
+
   // mount dưới /api
   app.use("/api", router);
 
   console.log(
-    "[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*, /api/users/*, /api/cart/*, /api/orders/*"
+    "[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*, /api/users/*, /api/cart/*, /api/orders/*, /api/vouchers/*, /api/loyalty/*"
   );
 }
