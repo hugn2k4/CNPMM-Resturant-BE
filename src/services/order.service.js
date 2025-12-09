@@ -5,7 +5,7 @@ import Order from "../models/order.js";
 import Product from "../models/product.js";
 import UserVoucher from "../models/userVoucher.js";
 import Voucher from "../models/voucher.js";
-import loyaltyService from "./loyalty.service.js";
+import loyaltyService, { LoyaltyService } from "./loyalty.service.js";
 
 class OrderService {
   // Tạo đơn hàng mới
@@ -103,7 +103,11 @@ class OrderService {
 
           if (loyaltyAccount.availablePoints >= pointsToUse) {
             pointsUsed = pointsToUse;
-            pointsDiscount = pointsToUse * loyaltyService.constructor.CURRENCY_PER_POINT;
+            // Tỷ lệ: 1 điểm = 10 VND (100 điểm = 1,000 VND)
+            // Ví dụ: 10 điểm = 100 VND, 100 điểm = 1,000 VND
+            const CURRENCY_PER_POINT = 10; // Đảm bảo dùng đúng tỷ lệ
+            pointsDiscount = pointsToUse * CURRENCY_PER_POINT;
+            console.log(`[Order] Using ${pointsToUse} points = ${pointsDiscount} VND discount`);
           }
         } catch (error) {
           console.log("Error applying loyalty points:", error.message);

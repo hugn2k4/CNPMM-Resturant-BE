@@ -23,12 +23,30 @@ const reviewSchema = new mongoose.Schema({
     ref: 'Product',
     required: true
   },
+  orderId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Order',
+    required: false // Optional để hỗ trợ reviews cũ
+  },
   images: [{
     type: String
   }],
   isVerifiedPurchase: {
     type: Boolean,
     default: false
+  },
+  isFiltered: {
+    type: Boolean,
+    default: false
+  },
+  originalContent: {
+    type: String,
+    select: false // Không trả về khi query thông thường
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected', 'hidden'],
+    default: 'approved'
   }
 }, { timestamps: true });
 
@@ -36,6 +54,8 @@ const reviewSchema = new mongoose.Schema({
 reviewSchema.index({ productId: 1, createdAt: -1 });
 reviewSchema.index({ userId: 1 });
 reviewSchema.index({ rate: -1 });
+reviewSchema.index({ orderId: 1 }); // Index cho orderId
+reviewSchema.index({ userId: 1, productId: 1, orderId: 1 }); // Compound index để check duplicate review per order
 
 // Middleware cập nhật rating của product sau khi review
 reviewSchema.post('save', async function() {

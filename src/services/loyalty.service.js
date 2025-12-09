@@ -4,7 +4,7 @@ import PointTransaction from "../models/pointTransaction.js";
 class LoyaltyService {
   // Configuration
   static POINTS_PER_CURRENCY = 1; // 1 point per 1000 VND
-  static CURRENCY_PER_POINT = 1000; // 1 point = 1000 VND
+  static CURRENCY_PER_POINT = 10; // 1 point = 10 VND (100 điểm = 1000 VND)
   static MIN_POINTS_TO_REDEEM = 100; // Minimum 100 points to redeem
 
   // Get or create loyalty account for user
@@ -127,8 +127,9 @@ class LoyaltyService {
       throw new Error("Không đủ điểm để thực hiện giao dịch");
     }
 
-    // Calculate discount amount
-    const discountAmount = pointsToRedeem * LoyaltyService.CURRENCY_PER_POINT;
+    // Tỷ lệ: 1 điểm = 10 VND (100 điểm = 1,000 VND)
+    const CURRENCY_PER_POINT = 10;
+    const discountAmount = pointsToRedeem * CURRENCY_PER_POINT;
 
     return {
       pointsToRedeem,
@@ -141,7 +142,12 @@ class LoyaltyService {
   async applyPointsToOrder(userId, pointsToRedeem, orderId) {
     const account = await this.getOrCreateLoyaltyAccount(userId);
 
-    const discountAmount = pointsToRedeem * LoyaltyService.CURRENCY_PER_POINT;
+    // Tỷ lệ: 1 điểm = 10 VND (100 điểm = 1,000 VND)
+    // Đảm bảo dùng đúng tỷ lệ
+    const CURRENCY_PER_POINT = 10;
+    const discountAmount = pointsToRedeem * CURRENCY_PER_POINT;
+    
+    console.log(`[Loyalty] Redeeming ${pointsToRedeem} points = ${discountAmount} VND discount`);
 
     await account.deductPoints(pointsToRedeem, `Đổi điểm cho đơn hàng #${orderId}`, orderId);
 
@@ -231,4 +237,6 @@ class LoyaltyService {
   }
 }
 
-export default new LoyaltyService();
+const loyaltyServiceInstance = new LoyaltyService();
+export default loyaltyServiceInstance;
+export { LoyaltyService };
