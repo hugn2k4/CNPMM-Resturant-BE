@@ -83,6 +83,65 @@ class ReviewService {
     }
   }
 
+  // Tìm order đã delivered có sản phẩm này và chưa được đánh giá
+  async findUnreviewedOrder(userId, productId, orderId = null) {
+    try {
+      // Nếu có orderId, kiểm tra order đó
+      if (orderId) {
+        const order = await Order.findOne({
+          _id: orderId,
+          userId: userId,
+          orderStatus: 'delivered',
+          'items.productId': productId
+        }).lean();
+
+        if (!order) {
+          return null;
+        }
+
+        // Kiểm tra xem đã đánh giá order này chưa
+        const existingReview = await Review.findOne({
+          userId: userId,
+          productId: productId,
+          orderId: orderId
+        });
+
+        // Nếu chưa đánh giá, trả về order này
+        if (!existingReview) {
+          return order;
+        }
+        return null;
+      }
+
+      // Nếu không có orderId, tìm order gần nhất chưa được đánh giá
+      const orders = await Order.find({
+        userId: userId,
+        orderStatus: 'delivered',
+        'items.productId': productId
+      })
+        .sort({ deliveredAt: -1, createdAt: -1 })
+        .lean();
+
+      // Tìm order chưa được đánh giá
+      for (const order of orders) {
+        const existingReview = await Review.findOne({
+          userId: userId,
+          productId: productId,
+          orderId: order._id
+        });
+
+        if (!existingReview) {
+          return order;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error finding unreviewed order:', error);
+      return null;
+    }
+  }
+
   // Tặng điểm khi đánh giá thành công
   async grantReviewPoints(userId, productId) {
     try {
@@ -121,29 +180,45 @@ class ReviewService {
         throw new Error('Product not found');
       }
 
-      // Kiểm tra user đã mua sản phẩm chưa
-      const hasPurchased = await this.hasUserPurchasedProduct(
+      // Tìm order đã delivered có sản phẩm này và chưa được đánh giá
+      const order = await this.findUnreviewedOrder(
         reviewData.userId,
-        reviewData.productId
+        reviewData.productId,
+        reviewData.orderId || null
       );
 
-      if (!hasPurchased) {
-        throw new Error('Bạn chỉ có thể đánh giá sản phẩm đã mua thành công');
+      if (!order) {
+        // Kiểm tra xem có order nào đã delivered không
+        const hasPurchased = await this.hasUserPurchasedProduct(
+          reviewData.userId,
+          reviewData.productId
+        );
+
+        if (!hasPurchased) {
+          throw new Error('Bạn chỉ có thể đánh giá sản phẩm đã mua thành công');
+        }
+
+        // Nếu có order nhưng tất cả đã được đánh giá
+        throw new Error('Bạn đã đánh giá tất cả các đơn hàng có sản phẩm này. Hãy mua lại để đánh giá tiếp!');
       }
 
-      // Check if user already reviewed this product
-      const existingReview = await Review.findOne({
-        userId: reviewData.userId,
-        productId: reviewData.productId
-      });
+      // Kiểm tra xem đã đánh giá order này chưa (double check)
+      if (order._id) {
+        const existingReview = await Review.findOne({
+          userId: reviewData.userId,
+          productId: reviewData.productId,
+          orderId: order._id
+        });
 
-      if (existingReview) {
-        throw new Error('You have already reviewed this product');
+        if (existingReview) {
+          throw new Error('Bạn đã đánh giá sản phẩm này trong đơn hàng này rồi');
+        }
       }
 
-      // Tạo review với isVerifiedPurchase = true
+      // Tạo review với isVerifiedPurchase = true và orderId
       const review = new Review({
         ...reviewData,
+        orderId: order._id,
         isVerifiedPurchase: true
       });
       await review.save();
