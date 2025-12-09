@@ -29,6 +29,19 @@ const reviewSchema = new mongoose.Schema({
   isVerifiedPurchase: {
     type: Boolean,
     default: false
+  },
+  isFiltered: {
+    type: Boolean,
+    default: false
+  },
+  originalContent: {
+    type: String,
+    select: false // Không trả về khi query thông thường
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected', 'hidden'],
+    default: 'approved'
   }
 }, { timestamps: true });
 
