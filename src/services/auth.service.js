@@ -22,8 +22,13 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-const generateAccessToken = (email) => {
-  return jwt.sign({ email }, process.env.JWT_SECRET || "changeme", {
+const generateAccessToken = (email, userId = null) => {
+  const payload = { email };
+  if (userId) {
+    payload.userId = userId;
+    payload.uid = userId; // Để tương thích với signAccessToken
+  }
+  return jwt.sign(payload, process.env.JWT_SECRET || "changeme", {
     expiresIn: accessTokenExpiry,
   });
 };
@@ -210,7 +215,7 @@ export async function login(loginRequest) {
   // Revoke existing tokens
   await RefreshToken.updateMany({ user: user._id, revoked: false }, { revoked: true });
 
-  const accessToken = generateAccessToken(user.email);
+  const accessToken = generateAccessToken(user.email, user._id.toString());
 
   let refreshTokenValue;
   do {
@@ -249,7 +254,6 @@ export async function login(loginRequest) {
   };
 }
 
-// REFRESH TOKEN
 export async function refreshToken(refreshTokenRequest) {
   const { refreshToken: tokenValue } = refreshTokenRequest;
   const now = new Date();
@@ -264,8 +268,11 @@ export async function refreshToken(refreshTokenRequest) {
   }
 
   const user = refresh.user;
+  if (!user) {
+    throw new Error("User không tồn tại!");
+  }
 
-  const newAccessToken = generateAccessToken(user.email);
+  const newAccessToken = generateAccessToken(user.email, user._id.toString());
 
   // Rotate refresh token
   refresh.revoked = true;

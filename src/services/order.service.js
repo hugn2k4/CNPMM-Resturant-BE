@@ -187,8 +187,15 @@ class OrderService {
           true // Gửi email
         );
       
+        // Convert Mongoose document to plain object for socket
+        const notificationData = notification.toObject ? notification.toObject() : notification;
+        // Đảm bảo userId là string
+        const userIdStr = String(userId);
+        console.log("[OrderService] Sending notification via socket to user:", userIdStr);
+        console.log("[OrderService] Notification ID:", notificationData._id);
+        
         // Gửi qua WebSocket
-        sendNotificationToUser(userId, notification);
+        sendNotificationToUser(userIdStr, notificationData);
       } catch (notifError) {
         console.error("[OrderService] Error sending notification:", notifError);
         // Không throw error, vì order đã được tạo thành công
@@ -307,7 +314,9 @@ class OrderService {
         { orderId: order._id, orderNumber: order.orderNumber },
         true
       );
-      sendNotificationToUser(userId, notification);
+      // Convert Mongoose document to plain object for socket
+      const notificationData = notification.toObject ? notification.toObject() : notification;
+      sendNotificationToUser(userId, notificationData);
 
       return order;
     } catch (error) {
@@ -342,7 +351,9 @@ class OrderService {
         { orderId: order._id, orderNumber: order.orderNumber },
         true
       );
-      sendNotificationToUser(userId, notification);
+      // Convert Mongoose document to plain object for socket
+      const notificationData = notification.toObject ? notification.toObject() : notification;
+      sendNotificationToUser(userId, notificationData);
 
       return order;
     } catch (error) {
@@ -470,7 +481,9 @@ class OrderService {
           { orderId: order._id, orderNumber: order.orderNumber },
           true
         );
-        sendNotificationToUser(order.userId, notification);
+        // Convert Mongoose document to plain object for socket
+        const notificationData = notification.toObject ? notification.toObject() : notification;
+        sendNotificationToUser(order.userId, notificationData);
       }
 
       return order;
