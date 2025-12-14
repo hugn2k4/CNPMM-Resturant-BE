@@ -1,4 +1,6 @@
 // src/controller/auth.controller.js
+import crypto from "crypto";
+import RefreshToken from "../models/refreshToken.js";
 import * as authService from "../services/auth.service.js";
 import { buildAuthUrl, exchangeCode, verifyIdToken } from "../services/google.service.js";
 
@@ -37,32 +39,46 @@ export const googleLogin = async (req, res) => {
 export const googleCallback = async (req, res) => {
   const env = envFromProcess();
 
-  // --- LOG DEBUG ---
-  console.log("[CALLBACK QUERY]", req.query);
-
   try {
     const profile = await exchangeCode({ ...req.query }, env);
+    const user = await authService.upsertGoogleUser(profile);
+    const accessToken = authService.signAccessToken(user, process.env.JWT_SECRET);
 
-    // --- LOG DEBUG ---
-    console.log("[PROFILE]", {
-      sub: profile?.sub,
-      email: profile?.email,
-      email_verified: profile?.email_verified,
-      name: profile?.name,
-      picture: profile?.picture ? "yes" : "no",
+    const refreshTokenExpiration = parseInt(process.env.JWT_REFRESH_EXPIRATION || "86400000");
+    
+    await RefreshToken.updateMany({ user: user.id, revoked: false }, { revoked: true });
+    
+    let refreshTokenValue;
+    do {
+      refreshTokenValue = crypto.randomUUID();
+    } while (await RefreshToken.exists({ token: refreshTokenValue }));
+    
+    const refreshDoc = new RefreshToken({
+      token: refreshTokenValue,
+      user: user.id,
+      expiryDate: new Date(Date.now() + refreshTokenExpiration),
+      revoked: false,
+    });
+    await refreshDoc.save();
+
+    res.cookie("access_token", accessToken, { 
+      httpOnly: true, 
+      sameSite: "lax", 
+      secure: false,
+      path: "/",
     });
 
-    const user = await authService.upsertGoogleUser(profile);
-    const token = authService.signAccessToken(user, process.env.JWT_SECRET);
-
-    // set cookie httpOnly (tùy bạn)
-    res.cookie("access_token", token, { httpOnly: true, sameSite: "lax", secure: false });
+    const cookieOptions = {
+      httpOnly: true,
+      sameSite: "Strict",
+      maxAge: refreshTokenExpiration,
+      path: "/",
+    };
+    res.cookie("refreshToken", refreshTokenValue, cookieOptions);
 
     return res.redirect(`${process.env.FRONTEND_URL}/?login=success`);
   } catch (e) {
     console.error("OAuth callback error:", e);
-    // để dễ debug có thể trả JSON thay vì redirect:
-    // return res.status(500).json({ success:false, message: e?.message || String(e) });
     return res.redirect(`${process.env.FRONTEND_URL}/?login=failed`);
   }
 };
@@ -71,13 +87,9 @@ export const me = async (req, res) => {
   res.json({ ok: true, user: req.user });
 };
 
-// Xử lý idToken từ frontend (Google Identity Services)
 export const googleIdTokenLogin = async (req, res) => {
   const env = envFromProcess();
   const { idToken } = req.body;
-
-  // --- LOG DEBUG ---
-  console.log("[GOOGLE ID TOKEN LOGIN]", { hasToken: !!idToken });
 
   if (!idToken) {
     return res.status(400).json({
@@ -87,21 +99,9 @@ export const googleIdTokenLogin = async (req, res) => {
   }
 
   try {
-    // Verify idToken với Google
     const profile = await verifyIdToken(idToken, env);
-
-    // --- LOG DEBUG ---
-    console.log("[ID TOKEN PROFILE]", {
-      sub: profile?.sub,
-      email: profile?.email,
-      email_verified: profile?.email_verified,
-      name: profile?.name,
-    });
-
-    // Tạo hoặc cập nhật user trong DB
     const user = await authService.upsertGoogleUser(profile);
 
-    // Tạo JWT token
     const accessToken = authService.signAccessToken(user, process.env.JWT_SECRET);
 
     // Trả về token cho frontend với format giống local login
@@ -163,12 +163,7 @@ export const confirm = async (req, res, next) => {
 
 export const login = async (req, res, next) => {
   try {
-    console.log("🔐 [LOGIN] Request:", { email: req.body.email });
     const data = await authService.login(req.body);
-    console.log("🔐 [LOGIN] Service response:", {
-      hasAccessToken: !!data.accessToken,
-      message: data.message,
-    });
 
     if (!data.accessToken) {
       return res.status(401).json({
@@ -179,11 +174,9 @@ export const login = async (req, res, next) => {
       });
     }
 
-    // set refresh token cookie (httpOnly)
     const refreshToken = data.refreshToken;
     const cookieOptions = {
       httpOnly: true,
-      // secure: true, // enable in production with HTTPS
       sameSite: "Strict",
       maxAge: parseInt(process.env.JWT_REFRESH_EXPIRATION || "86400000"),
       path: "/",
@@ -203,13 +196,14 @@ export const login = async (req, res, next) => {
 
 export const refresh = async (req, res, next) => {
   try {
-    const token = req.body.refreshToken || req.cookies?.refreshToken;
+    const token = (req.body && req.body.refreshToken) || (req.cookies && req.cookies.refreshToken);
+    
     if (!token) {
       return res.status(400).json({ success: false, message: "Missing refresh token" });
     }
+    
     const resp = await authService.refreshToken({ refreshToken: token });
 
-    // set new cookie
     res.cookie("refreshToken", resp.refreshToken, {
       httpOnly: true,
       sameSite: "Strict",

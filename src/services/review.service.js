@@ -4,6 +4,8 @@ import Review from "../models/review.js";
 import Product from "../models/product.js";
 import Order from "../models/order.js";
 import loyaltyService from "./loyalty.service.js";
+import notificationService from "./notification.service.js";
+import { sendNotificationToRoom } from "../socket/socketServer.js";
 
 class ReviewService {
   // Lấy reviews của sản phẩm
@@ -241,6 +243,30 @@ class ReviewService {
       const reviewResult = await Review.findById(review._id)
         .populate('userId', 'firstName lastName image')
         .lean();
+
+      // Gửi notification cho admin về review mới
+      try {
+        const notification = await notificationService.createNotification(
+          reviewData.userId,
+          "REVIEW_NEW",
+          "Đánh giá của bạn đã được đăng",
+          `Cảm ơn bạn đã đánh giá sản phẩm "${product.name}". Bạn đã nhận được ${pointsResult?.points || 0} điểm thưởng!`,
+          { reviewId: review._id, productId: reviewData.productId },
+          false // Không gửi email cho review
+        );
+        // Có thể gửi qua socket nếu cần
+      } catch (notifError) {
+        console.error("Error sending review notification:", notifError);
+        // Không throw error, vì review đã được tạo thành công
+      }
+
+      // Gửi notification cho admin (nếu có room admin)
+      sendNotificationToRoom("admin", {
+        type: "REVIEW_NEW",
+        title: "Đánh giá mới",
+        message: `Có đánh giá mới cho sản phẩm "${product.name}"`,
+        data: { reviewId: review._id, productId: reviewData.productId },
+      });
 
       return {
         review: reviewResult,

@@ -1,6 +1,9 @@
 import Product from "../models/product.js";
 import UserVoucher from "../models/userVoucher.js";
 import Voucher from "../models/voucher.js";
+import User from "../models/user.js";
+import notificationService from "./notification.service.js";
+import { sendNotificationToRoom, sendNotificationToUsers } from "../socket/socketServer.js";
 
 class VoucherService {
   // Admin: Create voucher
@@ -19,6 +22,51 @@ class VoucherService {
       ...voucherData,
       createdBy: adminId,
     });
+
+    // Gửi notification cho users nếu voucher là public
+    if (voucher.isPublic && voucher.isActive) {
+      try {
+        // Lấy danh sách users đã lưu voucher (nếu có)
+        const savedUserVouchers = await UserVoucher.find({ isSaved: true }).select("user").lean();
+        const savedUserIds = savedUserVouchers.map((uv) => uv.user.toString());
+
+        // Nếu có users đã lưu voucher, gửi notification cho họ
+        if (savedUserIds.length > 0) {
+          const discountText =
+            voucher.discountType === "PERCENTAGE"
+              ? `${voucher.discountValue}%`
+              : `${voucher.discountValue.toLocaleString("vi-VN")} VND`;
+
+          const notifications = await notificationService.createNotificationForUsers(
+            savedUserIds,
+            "VOUCHER_NEW",
+            "Voucher mới đã có sẵn",
+            `Voucher "${voucher.name}" với mã ${voucher.code} đã có sẵn. Giảm ${discountText}!`,
+            { voucherId: voucher._id, voucherCode: voucher.code }
+          );
+
+          // Gửi qua WebSocket
+          const notificationData = {
+            type: "VOUCHER_NEW",
+            title: "Voucher mới đã có sẵn",
+            message: `Voucher "${voucher.name}" với mã ${voucher.code} đã có sẵn. Giảm ${discountText}!`,
+            data: { voucherId: voucher._id, voucherCode: voucher.code },
+          };
+          sendNotificationToUsers(savedUserIds, notificationData);
+        }
+
+        // Gửi notification cho admin room
+        sendNotificationToRoom("admin", {
+          type: "VOUCHER_NEW",
+          title: "Voucher mới đã được tạo",
+          message: `Voucher "${voucher.name}" (${voucher.code}) đã được tạo thành công`,
+          data: { voucherId: voucher._id },
+        });
+      } catch (notifError) {
+        console.error("Error sending voucher notification:", notifError);
+        // Không throw error, vì voucher đã được tạo thành công
+      }
+    }
 
     return voucher;
   }

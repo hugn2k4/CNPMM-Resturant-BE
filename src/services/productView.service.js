@@ -71,14 +71,38 @@ class ProductViewService {
         .slice(0, limit)
         .map((view) => view.productId);
 
+      // If no product IDs, return empty result
+      if (productIds.length === 0) {
+        return {
+          views: [],
+          products: [],
+        };
+      }
+
       // Fetch products with details
-      const products = await Product.find({
-        _id: { $in: productIds },
-        isDeleted: false,
-      })
-        .populate("categoryId", "name slug image")
-        .populate("listProductImage", "url alt")
-        .lean();
+      let products;
+      try {
+        products = await Product.find({
+          _id: { $in: productIds },
+          isDeleted: false,
+        })
+          .populate("categoryId", "name slug image")
+          .populate({
+            path: "listProductImage",
+            select: "url alt",
+            options: { strictPopulate: false }, // Allow populate even if some refs are missing
+          })
+          .lean();
+      } catch (populateError) {
+        // If populate fails, try without image populate
+        console.error("Error populating product images:", populateError);
+        products = await Product.find({
+          _id: { $in: productIds },
+          isDeleted: false,
+        })
+          .populate("categoryId", "name slug image")
+          .lean();
+      }
 
       // Sort products by view order
       const sortedProducts = productIds

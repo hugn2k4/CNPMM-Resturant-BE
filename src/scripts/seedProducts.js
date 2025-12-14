@@ -1,13 +1,19 @@
 "use strict";
 
+import dotenv from "dotenv";
 import mongoose from "mongoose";
 import Category from "../models/category.js";
 import Image from "../models/image.js";
 import Product from "../models/product.js";
 
+// Load environment variables
+dotenv.config();
+
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/siupo");
+    const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/node_fulltask";
+    console.log("🔌 Connecting to:", mongoUri);
+    await mongoose.connect(mongoUri);
     console.log("✅ MongoDB connected");
   } catch (error) {
     console.error("❌ MongoDB connection error:", error);
@@ -1071,24 +1077,40 @@ const seedData = async () => {
       },
     ];
 
-    await Product.insertMany(productsData);
+    const insertedProducts = await Product.insertMany(productsData, { ordered: false });
 
-    console.log(`✅ Đã tạo ${productsData.length} products`);
+    console.log(`✅ Đã tạo ${insertedProducts.length} products`);
+    
+    // Verify products were actually inserted
+    const count = await Product.countDocuments({});
+    console.log(`📦 Tổng số products trong database: ${count}`);
+    
     console.log("\n📊 THỐNG KÊ:");
     console.log(`   - Có khuyến mãi: ${productsData.filter((p) => p.discount > 0).length}`);
     console.log(`   - Hết hàng: ${productsData.filter((p) => p.stock === 0).length}`);
     console.log(`   - Best sellers (sold > 1000): ${productsData.filter((p) => p.soldCount > 1000).length}`);
     console.log(`   - Highest rated (4.8+): ${productsData.filter((p) => p.rating >= 4.8).length}`);
   } catch (error) {
-    console.error("❌ Lỗi:", error);
+    console.error("❌ Lỗi khi seed products:", error);
+    if (error.writeErrors) {
+      console.error("Chi tiết lỗi:", error.writeErrors);
+    }
+    throw error;
   }
 };
 
 const main = async () => {
-  await connectDB();
-  await seedData();
-  console.log("\n✅ HOÀN TẤT!");
-  process.exit(0);
+  try {
+    await connectDB();
+    await seedData();
+    console.log("\n✅ HOÀN TẤT!");
+    await mongoose.connection.close();
+    process.exit(0);
+  } catch (error) {
+    console.error("❌ Lỗi trong main:", error);
+    await mongoose.connection.close();
+    process.exit(1);
+  }
 };
 
 main();

@@ -13,6 +13,8 @@ import helmet from "helmet";
 import mongoose from "mongoose";
 import errorHandler from "./middlewares/errorHandler.js";
 import initApiRoutes from "./routes/api/index.js";
+import { createServer } from "http";
+import { initSocketServer } from "./socket/socketServer.js";
 
 const app = express();
 
@@ -84,8 +86,14 @@ app.get("/", (req, res) => {
 initApiRoutes(app);
 
 const port = process.env.PORT || 8080;
-app.listen(port, () => {
+const httpServer = createServer(app);
+
+// init socket server
+initSocketServer(httpServer);
+
+httpServer.listen(port, () => {
   console.log("Backend nodejs is running on the port: " + port);
+  console.log("WebSocket server initialized");
 });
 
 // error handler (last middleware)
