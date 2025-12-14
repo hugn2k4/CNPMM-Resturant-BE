@@ -6,6 +6,8 @@ import Product from "../models/product.js";
 import UserVoucher from "../models/userVoucher.js";
 import Voucher from "../models/voucher.js";
 import loyaltyService, { LoyaltyService } from "./loyalty.service.js";
+import notificationService from "./notification.service.js";
+import { sendNotificationToUser, sendNotificationToRoom } from "../socket/socketServer.js";
 
 class OrderService {
   // Tạo đơn hàng mới
@@ -174,6 +176,37 @@ class OrderService {
         },
       ]);
 
+      // Gửi notification (wrap trong try-catch để không làm fail order creation)
+      try {
+        const notification = await notificationService.createNotification(
+          userId,
+          "ORDER_NEW",
+          "Đơn hàng mới",
+          `Đơn hàng #${order.orderNumber} của bạn đã được tạo thành công.`,
+          { orderId: order._id, orderNumber: order.orderNumber },
+          true // Gửi email
+        );
+      
+        // Gửi qua WebSocket
+        sendNotificationToUser(userId, notification);
+      } catch (notifError) {
+        console.error("[OrderService] Error sending notification:", notifError);
+        // Không throw error, vì order đã được tạo thành công
+      }
+    
+      // Gửi notification cho admin (nếu có room admin)
+      try {
+        sendNotificationToRoom("admin", {
+          type: "ORDER_NEW",
+          title: "Đơn hàng mới",
+          message: `Có đơn hàng mới #${order.orderNumber}`,
+          data: { orderId: order._id },
+        });
+      } catch (adminNotifError) {
+        console.error("[OrderService] Error sending admin notification:", adminNotifError);
+        // Không throw error
+      }
+      
       return order;
     } catch (error) {
       throw new Error(`Error creating order: ${error.message}`);
@@ -265,6 +298,17 @@ class OrderService {
       order.cancelReason = reason || "Khách hàng hủy đơn";
       await order.save();
 
+      // Gửi notification
+      const notification = await notificationService.createNotification(
+        userId,
+        "ORDER_CANCELLED",
+        "Đơn hàng đã bị hủy",
+        `Đơn hàng #${order.orderNumber} của bạn đã bị hủy.${reason ? ` Lý do: ${reason}` : ""}`,
+        { orderId: order._id, orderNumber: order.orderNumber },
+        true
+      );
+      sendNotificationToUser(userId, notification);
+
       return order;
     } catch (error) {
       throw new Error(`Error cancelling order: ${error.message}`);
@@ -288,6 +332,17 @@ class OrderService {
       order.deliveredAt = new Date();
       order.paymentStatus = "paid"; // COD -> đã nhận hàng = đã thanh toán
       await order.save();
+
+      // Gửi notification
+      const notification = await notificationService.createNotification(
+        userId,
+        "ORDER_DELIVERED",
+        "Đơn hàng đã được giao thành công",
+        `Đơn hàng #${order.orderNumber} của bạn đã được giao thành công. Cảm ơn bạn đã mua sắm!`,
+        { orderId: order._id, orderNumber: order.orderNumber },
+        true
+      );
+      sendNotificationToUser(userId, notification);
 
       return order;
     } catch (error) {
@@ -373,6 +428,51 @@ class OrderService {
       }
 
       await order.save();
+
+      // Gửi notification cho user dựa trên trạng thái mới
+      let notificationType, title, message;
+      switch (status) {
+        case "confirmed":
+          notificationType = "ORDER_CONFIRMED";
+          title = "Đơn hàng đã được xác nhận";
+          message = `Đơn hàng #${order.orderNumber} của bạn đã được xác nhận. Chúng tôi sẽ bắt đầu chuẩn bị ngay!`;
+          break;
+        case "preparing":
+          notificationType = "ORDER_PREPARING";
+          title = "Đơn hàng đang được chuẩn bị";
+          message = `Đơn hàng #${order.orderNumber} của bạn đang được chuẩn bị. Sẽ sẵn sàng sớm!`;
+          break;
+        case "shipping":
+          notificationType = "ORDER_SHIPPING";
+          title = "Đơn hàng đang được giao";
+          message = `Đơn hàng #${order.orderNumber} của bạn đang được giao. Vui lòng chuẩn bị nhận hàng!`;
+          break;
+        case "delivered":
+          notificationType = "ORDER_DELIVERED";
+          title = "Đơn hàng đã được giao thành công";
+          message = `Đơn hàng #${order.orderNumber} của bạn đã được giao thành công. Cảm ơn bạn đã mua sắm!`;
+          break;
+        case "cancelled":
+          notificationType = "ORDER_CANCELLED";
+          title = "Đơn hàng đã bị hủy";
+          message = `Đơn hàng #${order.orderNumber} của bạn đã bị hủy.`;
+          break;
+        default:
+          return order; // Không gửi notification cho các trạng thái khác
+      }
+
+      if (notificationType) {
+        const notification = await notificationService.createNotification(
+          order.userId,
+          notificationType,
+          title,
+          message,
+          { orderId: order._id, orderNumber: order.orderNumber },
+          true
+        );
+        sendNotificationToUser(order.userId, notification);
+      }
+
       return order;
     } catch (error) {
       throw new Error(`Error updating order status: ${error.message}`);

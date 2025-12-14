@@ -10,6 +10,7 @@ import reviewRoute from "./review.route.js";
 import userRoute from "./user.route.js";
 import voucherRoute from "./voucher.route.js";
 import wishlistRoute from "./wishlist.route.js";
+import notificationRoute from "./notification.route.js";
 
 export default function initApiRoutes(app) {
   const router = Router();
@@ -47,10 +48,13 @@ export default function initApiRoutes(app) {
   // nhóm loyalty -> /api/loyalty/*
   router.use("/loyalty", loyaltyRoute);
 
+  // nhóm notifications -> /api/notifications/*
+  router.use("/notifications", notificationRoute);
+
   // mount dưới /api
   app.use("/api", router);
 
   console.log(
-    "[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*, /api/users/*, /api/cart/*, /api/wishlist/*, /api/orders/*, /api/vouchers/*, /api/loyalty/*"
+    "[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*, /api/users/*, /api/cart/*, /api/wishlist/*, /api/orders/*, /api/vouchers/*, /api/loyalty/*, /api/notifications/*"
   );
 }

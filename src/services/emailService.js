@@ -147,4 +147,110 @@ const sendOTPToEmail = async (toEmail, otp) => {
   return true;
 };
 
-export default { sendOTPToEmail };
+const getNotificationHtmlContent = (title, message, type) => {
+  const getTypeColor = (type) => {
+    if (type.includes("ORDER")) return "#ff6f20";
+    if (type.includes("REVIEW")) return "#4caf50";
+    if (type.includes("VOUCHER")) return "#2196f3";
+    return "#9c27b0";
+  };
+
+  return `<!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body {
+          background-color: #f0f4f8;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          margin: 0;
+          padding: 0;
+        }
+        .email-wrapper {
+          max-width: 700px;
+          margin: 50px auto;
+          padding: 20px;
+        }
+        .email-container {
+          background: linear-gradient(326deg, #86ffe799, #d6aeffd4);
+          border-radius: 14px;
+          padding: 40px;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+        }
+        .header {
+          text-align: center;
+          margin-bottom: 30px;
+        }
+        .header h1 {
+          margin: 0;
+          font-size: 28px;
+          color: ${getTypeColor(type)};
+        }
+        .content {
+          font-size: 16px;
+          color: #333333;
+          line-height: 1.6;
+          margin-bottom: 25px;
+          background: #fff7f0;
+          padding: 20px;
+          border-radius: 12px;
+        }
+        .footer {
+          text-align: center;
+          margin-top: 45px;
+          font-size: 13px;
+          color: #888888;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="email-wrapper">
+        <div class="email-container">
+          <div class="header">
+            <h1>${title}</h1>
+          </div>
+          <div class="content">
+            ${message}
+          </div>
+          <div class="footer">
+            Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi.
+          </div>
+        </div>
+      </div>
+    </body>
+    </html>`;
+};
+
+const sendNotificationEmail = async (toEmail, title, message, type) => {
+  const transporter = createTransporter();
+  if (!transporter) {
+    console.log(`[emailService] SMTP not configured. Notification for ${toEmail}: ${title}`);
+    return false;
+  }
+
+  const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER;
+  const fromName = process.env.FROM_NAME || "Siupo Restaurant";
+
+  const html = getNotificationHtmlContent(title, message, type);
+
+  const mailOptions = {
+    from: `${fromName} <${fromEmail}>`,
+    to: toEmail,
+    subject: title,
+    html,
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`[emailService] Notification email sent: ${info.messageId}`);
+    return true;
+  } catch (error) {
+    console.error(`[emailService] Error sending notification email:`, error);
+    return false;
+  }
+};
+
+export default { 
+  sendOTPToEmail,
+  sendNotificationEmail 
+};
