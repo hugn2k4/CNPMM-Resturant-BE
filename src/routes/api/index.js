@@ -12,6 +12,7 @@ import reviewRoute from "./review.route.js";
 import userRoute from "./user.route.js";
 import voucherRoute from "./voucher.route.js";
 import wishlistRoute from "./wishlist.route.js";
+import summaryRoute from "./summary.route.js";
 
 export default function initApiRoutes(app) {
   const router = Router();
@@ -45,6 +46,9 @@ export default function initApiRoutes(app) {
 
   // nhóm vouchers -> /api/vouchers/*
   router.use("/vouchers", voucherRoute);
+
+  // nhóm summary -> /api/summary/*
+  router.use("/summary", summaryRoute);
 
   // nhóm loyalty -> /api/loyalty/*
   router.use("/loyalty", loyaltyRoute);

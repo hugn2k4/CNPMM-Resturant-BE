@@ -1,0 +1,46 @@
+[
+  {
+    "userEmail": "alice@example.com",
+    "items": [
+      { "productName": "Cà phê sữa đá Việt Nam", "quantity": 2 },
+      { "productName": "Pancake dâu tây", "quantity": 1 }
+    ],
+    "shippingAddress": {
+      "fullName": "Alice Nguyen",
+      "phoneNumber": "0987654321",
+      "address": "123 Lê Lợi, Quận 1, TP.HCM"
+    },
+    "orderStatus": "delivered",
+    "deliveredAt": "2025-12-10T10:30:00.000Z",
+    "paymentMethod": "COD"
+  },
+  {
+    "userEmail": "bob@example.com",
+    "items": [
+      { "productName": "Burger bò phô mai đặc biệt", "quantity": 1 },
+      { "productName": "Cà phê sữa đá Việt Nam", "quantity": 1 }
+    ],
+    "shippingAddress": {
+      "fullName": "Bob Tran",
+      "phoneNumber": "0911222333",
+      "address": "45 Nguyễn Huệ, Quận 1, TP.HCM"
+    },
+    "orderStatus": "delivered",
+    "deliveredAt": "2025-12-12T18:45:00.000Z",
+    "paymentMethod": "COD"
+  },
+  {
+    "userEmail": "alice@example.com",
+    "items": [
+      { "productName": "Spaghetti Carbonara", "quantity": 3 }
+    ],
+    "shippingAddress": {
+      "fullName": "Alice Nguyen",
+      "phoneNumber": "0987654321",
+      "address": "123 Lê Lợi, Quận 1, TP.HCM"
+    },
+    "orderStatus": "delivered",
+    "deliveredAt": "2025-12-14T12:00:00.000Z",
+    "paymentMethod": "COD"
+  }
+]

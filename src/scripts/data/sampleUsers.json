@@ -1,0 +1,26 @@
+[
+  {
+    "email": "admin@example.com",
+    "fullName": "Admin Test",
+    "phoneNumber": "0123456789",
+    "role": "ADMIN",
+    "authProvider": "local",
+    "isEmailVerified": true
+  },
+  {
+    "email": "alice@example.com",
+    "fullName": "Alice Nguyen",
+    "phoneNumber": "0987654321",
+    "role": "user",
+    "authProvider": "local",
+    "isEmailVerified": true
+  },
+  {
+    "email": "bob@example.com",
+    "fullName": "Bob Tran",
+    "phoneNumber": "0911222333",
+    "role": "user",
+    "authProvider": "local",
+    "isEmailVerified": true
+  }
+]
