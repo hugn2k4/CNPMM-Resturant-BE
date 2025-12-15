@@ -3,14 +3,15 @@ import { Router } from "express";
 import authRoute from "./auth.route.js";
 import cartRoute from "./cart.route.js";
 import categoryRoute from "./category.route.js";
+import chatRoute from "./chat.route.js";
 import loyaltyRoute from "./loyalty.route.js";
+import notificationRoute from "./notification.route.js";
 import orderRoute from "./order.route.js";
 import productRoute from "./product.route.js";
 import reviewRoute from "./review.route.js";
 import userRoute from "./user.route.js";
 import voucherRoute from "./voucher.route.js";
 import wishlistRoute from "./wishlist.route.js";
-import notificationRoute from "./notification.route.js";
 
 export default function initApiRoutes(app) {
   const router = Router();
@@ -51,10 +52,13 @@ export default function initApiRoutes(app) {
   // nhóm notifications -> /api/notifications/*
   router.use("/notifications", notificationRoute);
 
+  // nhóm chat -> /api/chat/*
+  router.use("/chat", chatRoute);
+
   // mount dưới /api
   app.use("/api", router);
 
   console.log(
-    "[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*, /api/users/*, /api/cart/*, /api/wishlist/*, /api/orders/*, /api/vouchers/*, /api/loyalty/*, /api/notifications/*"
+    "[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*, /api/users/*, /api/cart/*, /api/wishlist/*, /api/orders/*, /api/vouchers/*, /api/loyalty/*, /api/notifications/*, /api/chat/*"
   );
 }

@@ -12,12 +12,14 @@ router.use(authenticateUser);
 // User routes
 router.post("/", orderController.createOrder);
 router.get("/my-orders", orderController.getMyOrders);
-router.get("/:orderId", orderController.getOrderDetail);
 router.patch("/:orderId/cancel", orderController.cancelOrder);
 router.patch("/:orderId/confirm-received", orderController.confirmReceived);
 
-// Admin routes (cần thêm middleware kiểm tra role admin sau)
-// router.get("/admin/all", orderController.getAllOrders);
-// router.patch("/admin/:orderId/status", orderController.updateOrderStatus);
+// Admin routes
+router.get("/", orderController.getAllOrders);
+router.patch("/admin/:orderId/status", orderController.updateOrderStatus);
+
+// Order detail - must be last to avoid conflict
+router.get("/:orderId", orderController.getOrderDetail);
 
 export default router;

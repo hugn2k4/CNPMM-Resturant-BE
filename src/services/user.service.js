@@ -28,7 +28,7 @@ export const updateUserProfile = async (userId, profileData) => {
     // Chỉ set gender nếu nó là giá trị hợp lệ, không phải false hoặc 'false'
     if (gender !== undefined) {
       const validGenders = ["MALE", "FEMALE", "OTHER", "male", "female", "other"];
-      if (gender === false || gender === 'false' || gender === null || gender === '') {
+      if (gender === false || gender === "false" || gender === null || gender === "") {
         updateFields.gender = undefined;
       } else if (validGenders.includes(gender)) {
         updateFields.gender = gender;
@@ -47,6 +47,19 @@ export const updateUserProfile = async (userId, profileData) => {
     return updatedUser;
   } catch (error) {
     console.error("updateUserProfile error:", error);
+    throw error;
+  }
+};
+
+/**
+ * Get all users (Admin only)
+ */
+export const getAllUsers = async () => {
+  try {
+    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    return users;
+  } catch (error) {
+    console.error("getAllUsers error:", error);
     throw error;
   }
 };
