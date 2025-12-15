@@ -14,7 +14,7 @@ const userSchema = new mongoose.Schema(
     dateOfBirth: { type: Date },
     gender: { type: String, enum: ["MALE", "FEMALE", "OTHER", "male", "female", "other"] },
     image: { type: String }, // map từ Google: picture
-    role: { type: String, default: "USER" }, // USER, ADMIN, etc.
+    role: { type: String, default: "user" }, // user, admin, etc.
     roleId: { type: String },
     positionId: { type: String },
     status: { type: String, enum: ["ACTIVE", "INACTIVE", "SUSPENDED"], default: "ACTIVE" },

@@ -49,4 +49,7 @@ router.put(
   userController.updateProfile
 );
 
+// Admin routes
+router.get("/", userController.getAllUsers);
+
 export default router;

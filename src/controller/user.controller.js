@@ -81,3 +81,32 @@ export const updateProfile = async (req, res) => {
     });
   }
 };
+
+// Admin: GET /api/users - Get all users
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await userService.getAllUsers();
+
+    return res.json({
+      success: true,
+      data: users.map((user) => ({
+        id: user._id,
+        email: user.email,
+        fullName: user.fullName || `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+        phoneNumber: user.phoneNumber,
+        dateOfBirth: user.dateOfBirth,
+        gender: user.gender,
+        role: user.role,
+        image: user.image,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      })),
+    });
+  } catch (error) {
+    console.error("getAllUsers error:", error);
+    return res.status(500).json({
+      success: false,
+      message: error?.message || "Internal server error",
+    });
+  }
+};
