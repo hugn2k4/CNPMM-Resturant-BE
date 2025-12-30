@@ -22,8 +22,13 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-const generateAccessToken = (email) => {
-  return jwt.sign({ email }, process.env.JWT_SECRET || "changeme", {
+const generateAccessToken = (userLike) => {
+  const payload = {
+    sub: userLike?._id?.toString?.() || userLike?.id || undefined,
+    email: userLike?.email,
+    role: userLike?.role,
+  };
+  return jwt.sign(payload, process.env.JWT_SECRET || "changeme", {
     expiresIn: accessTokenExpiry,
   });
 };
@@ -210,7 +215,7 @@ export async function login(loginRequest) {
   // Revoke existing tokens
   await RefreshToken.updateMany({ user: user._id, revoked: false }, { revoked: true });
 
-  const accessToken = generateAccessToken(user.email);
+  const accessToken = generateAccessToken(user);
 
   let refreshTokenValue;
   do {
@@ -265,7 +270,7 @@ export async function refreshToken(refreshTokenRequest) {
 
   const user = refresh.user;
 
-  const newAccessToken = generateAccessToken(user.email);
+  const newAccessToken = generateAccessToken(user);
 
   // Rotate refresh token
   refresh.revoked = true;
@@ -475,5 +480,10 @@ export function signAccessToken(user, JWT_SECRET) {
   if (!JWT_SECRET) {
     throw new Error("JWT_SECRET is not configured");
   }
-  return jwt.sign({ uid: user.id, email: user.email }, JWT_SECRET, { expiresIn: "7d" });
+  const payload = {
+    sub: user?.id || user?._id?.toString?.(),
+    email: user?.email,
+    role: user?.role,
+  };
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: accessTokenExpiry });
 }

@@ -43,7 +43,11 @@ export async function authenticateUser(req, res, next) {
 
     // Lấy thông tin user từ database
     const user = await User.findOne({
-      $or: [{ email: decoded.email }, { _id: decoded.uid }],
+      $or: [
+        { email: decoded.email },
+        { _id: decoded.uid }, // backward compat
+        { _id: decoded.sub },
+      ],
     });
 
     if (!user) {
