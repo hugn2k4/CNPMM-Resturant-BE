@@ -1,64 +1,11 @@
-// src/routes/api/index.js
-import { Router } from "express";
-import authRoute from "./auth.route.js";
-import cartRoute from "./cart.route.js";
-import categoryRoute from "./category.route.js";
-import chatRoute from "./chat.route.js";
-import loyaltyRoute from "./loyalty.route.js";
-import notificationRoute from "./notification.route.js";
-import orderRoute from "./order.route.js";
-import productRoute from "./product.route.js";
-import reviewRoute from "./review.route.js";
-import userRoute from "./user.route.js";
-import voucherRoute from "./voucher.route.js";
-import wishlistRoute from "./wishlist.route.js";
+import express from "express";
+import authRoutes from "./auth.js";
 
-export default function initApiRoutes(app) {
-  const router = Router();
+const router = express.Router();
 
-  // test nhanh
-  router.get("/ping", (_req, res) => res.send("api ok"));
-
-  // nhóm auth -> /api/auth/*
-  router.use("/auth", authRoute);
-
-  // nhóm products -> /api/products/*
-  router.use("/products", productRoute);
-
-  // nhóm categories -> /api/categories/*
-  router.use("/categories", categoryRoute);
-
-  // nhóm reviews -> /api/reviews/*
-  router.use("/reviews", reviewRoute);
-
-  // nhóm users -> /api/users/*
-  router.use("/users", userRoute);
-
-  // nhóm cart -> /api/cart/*
-  router.use("/cart", cartRoute);
-
-  // nhóm wishlist -> /api/wishlist/*
-  router.use("/wishlist", wishlistRoute);
-
-  // nhóm orders -> /api/orders/*
-  router.use("/orders", orderRoute);
-
-  // nhóm vouchers -> /api/vouchers/*
-  router.use("/vouchers", voucherRoute);
-
-  // nhóm loyalty -> /api/loyalty/*
-  router.use("/loyalty", loyaltyRoute);
-
-  // nhóm notifications -> /api/notifications/*
-  router.use("/notifications", notificationRoute);
-
-  // nhóm chat -> /api/chat/*
-  router.use("/chat", chatRoute);
-
-  // mount dưới /api
+const initApiRoutes = (app) => {
+  router.use("/auth", authRoutes);
   app.use("/api", router);
+};
 
-  console.log(
-    "[routes] mounted: /api, /api/ping, /api/auth/*, /api/products/*, /api/categories/*, /api/reviews/*, /api/users/*, /api/cart/*, /api/wishlist/*, /api/orders/*, /api/vouchers/*, /api/loyalty/*, /api/notifications/*, /api/chat/*"
-  );
-}
+export default initApiRoutes;
