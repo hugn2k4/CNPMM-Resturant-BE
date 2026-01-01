@@ -323,6 +323,27 @@ class ReviewService {
     }
   }
 
+  // Admin delete review by id (no user check)
+  async deleteReviewByAdmin(reviewId) {
+    try {
+      const review = await Review.findById(reviewId);
+      if (!review) {
+        throw new Error('Review not found');
+      }
+
+      // Remove review from product's listReview
+      await Product.findByIdAndUpdate(review.productId, {
+        $pull: { listReview: review._id }
+      });
+
+      await Review.findByIdAndDelete(reviewId);
+
+      return { message: 'Review deleted by admin successfully' };
+    } catch (error) {
+      throw new Error(`Error deleting review by admin: ${error.message}`);
+    }
+  }
+
   // Lấy thống kê rating của sản phẩm
   async getProductRatingStats(productId) {
     try {

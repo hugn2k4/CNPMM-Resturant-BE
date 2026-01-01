@@ -128,14 +128,16 @@ class ReviewController {
   // DELETE /api/reviews/:id
   deleteReview = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const userId = req.user?._id || req.body.userId;
+    // If admin, allow deleting any review
+    if (req.user && req.user.role === 'ADMIN') {
+      const result = await reviewService.deleteReviewByAdmin(id);
+      return res.status(200).json({ success: true, message: result.message });
+    }
 
+    const userId = req.user?._id || req.body.userId;
     const result = await reviewService.deleteReview(id, userId);
 
-    res.status(200).json({
-      success: true,
-      message: result.message
-    });
+    res.status(200).json({ success: true, message: result.message });
   });
 }
 

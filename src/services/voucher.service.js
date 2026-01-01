@@ -145,13 +145,19 @@ class VoucherService {
   // User: Get available public vouchers
   async getAvailableVouchers(userId, page = 1, limit = 20) {
     const now = new Date();
+    // Use start of today so vouchers expiring today are still considered valid
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     const query = {
       isActive: true,
       isPublic: true,
-      startDate: { $lte: now },
-      endDate: { $gte: now },
-      $or: [{ maxUsage: null }, { $expr: { $lt: ["$usageCount", "$maxUsage"] } }],
+      startDate: { $lte: startOfToday },
+      endDate: { $gte: startOfToday },
+      $or: [
+        { maxUsage: null },
+        { maxUsage: { $exists: false } },
+        { $expr: { $lt: ["$usageCount", "$maxUsage"] } },
+      ],
     };
 
     console.log("🔍 Query vouchers:", JSON.stringify(query, null, 2));
@@ -170,6 +176,30 @@ class VoucherService {
       Voucher.countDocuments(query),
       UserVoucher.find({ user: userId }).select("voucher usageCount isSaved"),
     ]);
+
+    console.log(`🔎 Voucher query returned total=${total}, fetched=${Array.isArray(vouchers)?vouchers.length:0}, userVouchers=${Array.isArray(userVouchers)?userVouchers.length:0}`);
+    try {
+      const debugVouchers = (vouchers || []).map((v) => ({
+        id: v._id?.toString(),
+        code: v.code,
+        startDate: v.startDate,
+        endDate: v.endDate,
+        isActive: v.isActive,
+        isPublic: v.isPublic,
+        maxUsage: v.maxUsage,
+        usageCount: v.usageCount,
+      }));
+      console.log("🔍 Voucher docs:", JSON.stringify(debugVouchers, null, 2));
+    } catch (e) {
+      console.log("Could not stringify vouchers for debug", e);
+    }
+
+    try {
+      const uvDebug = (userVouchers || []).map((uv) => ({ voucher: uv.voucher?.toString(), usageCount: uv.usageCount, isSaved: uv.isSaved }));
+      console.log("🧾 UserVoucher docs:", JSON.stringify(uvDebug, null, 2));
+    } catch (e) {
+      console.log("Could not stringify userVouchers for debug", e);
+    }
 
     // Map user voucher data to vouchers
     const userVoucherMap = {};
