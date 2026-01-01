@@ -78,7 +78,7 @@ const createDefaultAdmin = async () => {
 };
 
 const connectMongo = async () => {
-  const uri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/node_fulltask";
+  const uri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/siupo";
   try {
     await mongoose.connect(uri, {
       useNewUrlParser: true,
