@@ -1,12 +1,13 @@
 "use strict";
 
+import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
-import mongoose from "mongoose";
 import fs from "fs";
+import mongoose from "mongoose";
 import path from "path";
-import User from "../models/user.js";
-import Product from "../models/product.js";
 import Order from "../models/order.js";
+import Product from "../models/product.js";
+import User from "../models/user.js";
 
 dotenv.config();
 
@@ -26,15 +27,27 @@ const connect = async () => {
 const loadJson = (fileName) => JSON.parse(fs.readFileSync(path.resolve("./src/scripts/data", fileName), "utf-8"));
 
 const createUsers = async (users) => {
+  // Default password for all seed users: "password123"
+  const defaultPassword = "password123";
+  const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
   for (const u of users) {
     const exists = await User.findOne({ email: u.email });
     if (exists) {
       console.log("User exists:", u.email);
       continue;
     }
-    const created = new User(u);
+
+    // Add hashed password and ensure status is ACTIVE
+    const userData = {
+      ...u,
+      password: hashedPassword,
+      status: u.status || "ACTIVE",
+    };
+
+    const created = new User(userData);
     await created.save();
-    console.log("Created user:", u.email);
+    console.log("Created user:", u.email, "with default password: password123");
   }
 };
 
@@ -56,7 +69,13 @@ const createOrders = async (orders) => {
         continue;
       }
       const price = product.discountPrice || product.price || 0;
-      orderItems.push({ productId: product._id, quantity: it.quantity, price, name: product.name, image: product.listProductImage?.[0]?.url || "" });
+      orderItems.push({
+        productId: product._id,
+        quantity: it.quantity,
+        price,
+        name: product.name,
+        image: product.listProductImage?.[0]?.url || "",
+      });
       calculatedTotal += price * it.quantity;
       // reduce stock for realism if available
       if (typeof product.stock === "number") {

@@ -5,7 +5,8 @@
     "phoneNumber": "0123456789",
     "role": "ADMIN",
     "authProvider": "local",
-    "isEmailVerified": true
+    "isEmailVerified": true,
+    "status": "ACTIVE"
   },
   {
     "email": "alice@example.com",
@@ -13,7 +14,8 @@
     "phoneNumber": "0987654321",
     "role": "user",
     "authProvider": "local",
-    "isEmailVerified": true
+    "isEmailVerified": true,
+    "status": "ACTIVE"
   },
   {
     "email": "bob@example.com",
@@ -21,6 +23,7 @@
     "phoneNumber": "0911222333",
     "role": "user",
     "authProvider": "local",
-    "isEmailVerified": true
+    "isEmailVerified": true,
+    "status": "ACTIVE"
   }
 ]

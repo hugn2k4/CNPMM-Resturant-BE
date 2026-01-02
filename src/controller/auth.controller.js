@@ -45,14 +45,14 @@ export const googleCallback = async (req, res) => {
     const accessToken = authService.signAccessToken(user, process.env.JWT_SECRET);
 
     const refreshTokenExpiration = parseInt(process.env.JWT_REFRESH_EXPIRATION || "86400000");
-    
+
     await RefreshToken.updateMany({ user: user.id, revoked: false }, { revoked: true });
-    
+
     let refreshTokenValue;
     do {
       refreshTokenValue = crypto.randomUUID();
     } while (await RefreshToken.exists({ token: refreshTokenValue }));
-    
+
     const refreshDoc = new RefreshToken({
       token: refreshTokenValue,
       user: user.id,
@@ -61,9 +61,9 @@ export const googleCallback = async (req, res) => {
     });
     await refreshDoc.save();
 
-    res.cookie("access_token", accessToken, { 
-      httpOnly: true, 
-      sameSite: "lax", 
+    res.cookie("access_token", accessToken, {
+      httpOnly: true,
+      sameSite: "lax",
       secure: false,
       path: "/",
     });
@@ -169,7 +169,7 @@ export const login = async (req, res, next) => {
       return res.status(401).json({
         success: false,
         code: "401",
-        message: data.message,
+        message: data.message || "Đăng nhập thất bại",
         data: null,
       });
     }
@@ -186,8 +186,11 @@ export const login = async (req, res, next) => {
     return res.json({
       success: true,
       code: "200",
-      message: "Đăng nhập thành công!",
-      data,
+      message: data.message || "Đăng nhập thành công!",
+      data: {
+        accessToken: data.accessToken,
+        user: data.user,
+      },
     });
   } catch (err) {
     next(err);
@@ -197,11 +200,11 @@ export const login = async (req, res, next) => {
 export const refresh = async (req, res, next) => {
   try {
     const token = (req.body && req.body.refreshToken) || (req.cookies && req.cookies.refreshToken);
-    
+
     if (!token) {
       return res.status(400).json({ success: false, message: "Missing refresh token" });
     }
-    
+
     const resp = await authService.refreshToken({ refreshToken: token });
 
     res.cookie("refreshToken", resp.refreshToken, {
