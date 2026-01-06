@@ -60,6 +60,17 @@ const seedData = async () => {
     ];
     const images = await Image.insertMany(imagesData);
 
+    // Gán đa ảnh cho mỗi sản phẩm (xoay vòng bộ ảnh để luôn có >=3 ảnh)
+    const getImagesForProduct = (index) => {
+      const len = images.length;
+      const i = index % len;
+      return [
+        images[i]._id,
+        images[(i + 1) % len]._id,
+        images[(i + 2) % len]._id,
+      ];
+    };
+
     // Dữ liệu sản phẩm thực tế
     console.log("🍔 Đang tạo products...");
 
@@ -1077,7 +1088,13 @@ const seedData = async () => {
       },
     ];
 
-    const insertedProducts = await Product.insertMany(productsData, { ordered: false });
+    // Gắn 3 ảnh cho từng sản phẩm (ghi đè nếu trước đó chỉ có 1 ảnh)
+    const productsDataWithImages = productsData.map((p, idx) => ({
+      ...p,
+      listProductImage: getImagesForProduct(idx),
+    }));
+
+    const insertedProducts = await Product.insertMany(productsDataWithImages, { ordered: false });
 
     console.log(`✅ Đã tạo ${insertedProducts.length} products`);
     
@@ -1086,10 +1103,10 @@ const seedData = async () => {
     console.log(`📦 Tổng số products trong database: ${count}`);
     
     console.log("\n📊 THỐNG KÊ:");
-    console.log(`   - Có khuyến mãi: ${productsData.filter((p) => p.discount > 0).length}`);
-    console.log(`   - Hết hàng: ${productsData.filter((p) => p.stock === 0).length}`);
-    console.log(`   - Best sellers (sold > 1000): ${productsData.filter((p) => p.soldCount > 1000).length}`);
-    console.log(`   - Highest rated (4.8+): ${productsData.filter((p) => p.rating >= 4.8).length}`);
+    console.log(`   - Có khuyến mãi: ${productsDataWithImages.filter((p) => p.discount > 0).length}`);
+    console.log(`   - Hết hàng: ${productsDataWithImages.filter((p) => p.stock === 0).length}`);
+    console.log(`   - Best sellers (sold > 1000): ${productsDataWithImages.filter((p) => p.soldCount > 1000).length}`);
+    console.log(`   - Highest rated (4.8+): ${productsDataWithImages.filter((p) => p.rating >= 4.8).length}`);
   } catch (error) {
     console.error("❌ Lỗi khi seed products:", error);
     if (error.writeErrors) {
